@@ -7,7 +7,7 @@ import re
 import ast
 from collections import defaultdict
 
-REPOS_DIR = "./cloned_repos_v2"
+REPOS_DIR = "./cloned_repos"
 VALID_EXTENSIONS = {".py"}
 
 # ==== 공격 유형별 정리 ====
