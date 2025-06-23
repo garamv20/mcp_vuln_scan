@@ -1,35 +1,32 @@
 # mcp_vuln_scan
 Python 기반 MCP서버 취약점 스캔 프로젝트 
-Git 저장소 목록을 일괄 클론하고, 각 저장소에서 MCP 관련 취약 패턴을 스캔하는 도구입니다.
+- Git 저장소 목록을 일괄 클론하고, 각 저장소에서 MCP 관련 취약 패턴 사용을 스캔하는 도구입니다.
 
----
 
 ## 주요 기능
-
 - **저장소 일괄 Clone**  
   `repos.txt`에 나열된 Git URL을 읽어 `cloned_repos/` 폴더에 차례로 클론합니다.  
 - **취약점 패턴 스캔**  
   클론된 각 저장소 내에서 “크리티컬” 및 “논크리티컬” 정규식 패턴을 찾아 리포트합니다.
   
 
----
+
 
 ## 저장소 구조
 ````
 
-mcp\_vuln\_scan/
-├── cloned\_repos.py      # repos.txt의 URL을 읽어 저장소를 클론하는 스크립트
-├── scan\_mcp.py          # cloned_repos/ 아래 모든 저장소의 Python파일을 스캔하여 취약 패턴 검색
-├── repos.txt             # 한 줄에 하나씩 Git 저장소 URL을 입력
-└── cloned\_repos/        # (자동 생성) 클론된 저장소들이 위치
+mcp_vuln_scan/
+├── cloned_repos.py      # repos.txt의 URL을 읽어 저장소를 클론하는 스크립트
+├── scan_mcp.py          # cloned_repos/ 아래 모든 저장소의 Python파일을 스캔하여 취약 패턴 검색
+├── repos.txt            # 한 줄에 하나씩 Git 저장소 URL을 입력
+└── cloned_repos/        # (자동 생성) 클론된 저장소들이 위치
 
 ````
 
----
 
 ## 요구사항
 
-- Python 3.8 이상
+- Python 
 - Git CLI
 
 ## 사용 방법
@@ -65,17 +62,45 @@ mcp\_vuln\_scan/
    python3 scan_mcp.py | tee vuln_report.txt
    ```
 
----
-
-## 패턴 정의
-
-* **CRITICAL\_PATTERNS**
-  - RCE, SSRF, SQLi, Pickle RCE, CSV 인젝션 등 고위험 함수/구문
-* **NON\_CRITICAL\_PATTERNS**
-  - 타임아웃 지정 HTTP 호출, 임시파일 사용, 일부 XML 파서 등 주의할 패턴
 
 
----
+## 점검 패턴
+
+이번 스캐너에서는 다음 3가지 주요 유형의 **위험 취약점**과, 보조적으로 모니터링하는 **비치명적 패턴**, 그리고 **네트워크 노출** 가능성까지 총 3가지 로 분류하여 검사합니다.
+
+### 1. Critical Patterns  
+- **SSRF (Server-Side Request Forgery)**  
+  - `requests.get()` 혹은 `urllib.request.urlopen()` 등 외부 URL을 직접 호출하는 코드에서 탐지  
+- **RCE (Remote Code Execution)**  
+  - `eval()`, `exec()`, `os.system()`, `subprocess.Popen(shell=True)` 등 코드 실행 함수 사용 패턴  
+- **SQL Injection**  
+  - `cursor.execute(f"…{param}…")`, `.format()` 혹은 문자열 덧셈으로 쿼리를 조합하는 경우  
+  - ORM 사용 시 `session.execute("SELECT …")` 또는 `.raw("SELECT …")` 호출  
+- **Pickle RCE**  
+  - `pickle.loads()`, `marshal.load()`, `dill.loads()` 등 직렬화 포맷 역직렬화 구문  
+- **CSV Injection**  
+  - 스프레드시트 계산식을 직접 삽입할 여지가 있는 `=SUM(`, `=cmd|` 등으로 시작하는 셀 값
+
+### 2. Non-Critical Patterns  
+- **타임아웃 지정 요청**  
+  - `requests(..., timeout=…)` 혹은 `httpx(..., timeout=…)`  
+- **로컬 파일 접근**  
+  - 상대 경로(`../`), 절대 경로(`/…`)를 직접 `open(...)` 하는 경우  
+- **임시파일/압축 해제**  
+  - `tempfile.*`, `zipfile.extractall()`, `tarfile.extract()` 등 잠재적 파일 시스템 리스크  
+- **동적 코드/모듈 로딩**  
+  - `compile()`, `__import__()`, `importlib.import_module()`  
+- **정규식 과부하 위험**  
+  - `re.match()`, `re.search()`, `re.findall()` 등 표현식 복잡도 취약
+
+### 3. Network Exposure  
+- **0.0.0.0 바인드**  
+  - `app.run(host="0.0.0.0")`, `uvicorn.run(..., host="0.0.0.0")`, `socket.bind(("0.0.0.0", …))`  
+- **FastAPI/Flask 엔드포인트**  
+  - `@app.get(...)`, `@app.post(...)`, `FastAPI(...)`, 도구 자체의 외부 노출 지점  
+- **커맨드라인 호스트·포트 인자**  
+  - `--host`, `--port`, `--sse` 등 실행 시 외부 접근을 의도하는 옵션
+
 
 ## 출력 예시
 
