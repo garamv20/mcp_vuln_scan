@@ -66,16 +66,16 @@ mcp_vuln_scan/
 
 ## 점검 패턴
 
-이번 스캐너에서는 다음 3가지 주요 유형의 **위험 취약점**과, 보조적으로 모니터링하는 **비치명적 패턴**, 그리고 **네트워크 노출** 가능성까지 총 3가지 로 분류하여 검사합니다.
+주요 유형의 **위험 취약점**과, 보조적으로 모니터링하는 **비치명적 패턴**, 그리고 **네트워크 노출** 가능성까지 총 3가지 로 분류하여 검사합니다.
 
 ### 1. Critical Patterns  
 - **SSRF (Server-Side Request Forgery)**  
-  - `requests.get()` 혹은 `urllib.request.urlopen()` 등 외부 URL을 직접 호출하는 코드에서 탐지  
+  - `requests.get()` 혹은 `urllib.request.urlopen()` 등 외부 URL을 직접 호출하는 코드 탐지  
 - **RCE (Remote Code Execution)**  
   - `eval()`, `exec()`, `os.system()`, `subprocess.Popen(shell=True)` 등 코드 실행 함수 사용 패턴  
 - **SQL Injection**  
   - `cursor.execute(f"…{param}…")`, `.format()` 혹은 문자열 덧셈으로 쿼리를 조합하는 경우  
-  - ORM 사용 시 `session.execute("SELECT …")` 또는 `.raw("SELECT …")` 호출  
+  - ORM 사용 시 `session.execute("SELECT …")` 또는 `.raw("SELECT …")` 
 - **Pickle RCE**  
   - `pickle.loads()`, `marshal.load()`, `dill.loads()` 등 직렬화 포맷 역직렬화 구문  
 - **CSV Injection**  
@@ -91,7 +91,7 @@ mcp_vuln_scan/
 - **동적 코드/모듈 로딩**  
   - `compile()`, `__import__()`, `importlib.import_module()`  
 - **정규식 과부하 위험**  
-  - `re.match()`, `re.search()`, `re.findall()` 등 표현식 복잡도 취약
+  - `re.match()`, `re.search()`, `re.findall()`
 
 ### 3. Network Exposure  
 - **0.0.0.0 바인드**  
